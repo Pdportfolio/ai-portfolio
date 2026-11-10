@@ -39,3 +39,11 @@ yarn-error.log*
 # typescript
 *.tsbuildinfo
 next-env.d.ts
+
+# local tooling (not part of the app)
+.cursor/
+.claude/
+.agents/
+.hallmark/
+.playwright-mcp/
+tmp-canvas.png

@@ -1,0 +1,67 @@
+@theme static {
+  --font-display: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  --font-body: ui-sans-serif, system-ui, sans-serif, "Apple Color Emoji", "Segoe UI Emoji",
+    "Segoe UI Symbol", "Noto Color Emoji";
+  --font-mono: ui-monospace, SFMono-Regular, "SF Mono", Menlo, Consolas, monospace;
+  --text-xs: 0.75rem;
+  --text-sm: 0.875rem;
+  --text-md: 1rem;
+  --text-lg: 1.125rem;
+  --text-xl: 1.25rem;
+  --text-2xl: 1.5rem;
+  --text-display: 4.5rem;
+  --text-section: clamp(1.85rem, 2.4vw + 1rem, 2.75rem);
+  --ease-out: cubic-bezier(0.23, 1, 0.32, 1);
+  --ease-in-out: cubic-bezier(0.77, 0, 0.175, 1);
+  --color-bg: #ffffff;
+  --color-surface: #ffffff;
+  --color-surface-2: #f4f4f5;
+  --color-text: #09090b;
+  --color-muted: #52525b;
+  --color-accent: #0171e3;
+  --color-accent-ink: #ffffff;
+  --color-warm: #0171e3;
+  --color-rule: #e5e5e5;
+  --color-focus: #0171e3;
+  --radius-card: 16px;
+  --radius-pill: 999px;
+  --shadow-lift: 0 10px 15px -3px rgba(0, 0, 0, 0.1), 0 4px 6px -4px rgba(0, 0, 0, 0.1);
+  --shadow-glow: var(--shadow-lift);
+}
+
+:root {
+  color-scheme: light;
+  --space-2xs: 4px;
+  --space-xs: 8px;
+  --space-sm: 16px;
+  --space-md: 24px;
+  --space-lg: 32px;
+  --space-xl: 48px;
+  --space-2xl: 64px;
+  --space-3xl: 96px;
+  --dur-press: 140ms;
+  --dur-ui: 200ms;
+  --container: 1120px;
+  --gutter: 32px;
+  --section-gap: 96px;
+  --banner-height: 64px;
+  --z-base: 1;
+  --z-nav: 300;
+  --z-overlay: 400;
+  --z-skip: 600;
+}
+
+@media (max-width: 60rem) {
+  :root {
+    --gutter: 20px;
+    --section-gap: 64px;
+  }
+}
+
+@media (max-width: 40rem) {
+  :root {
+    --gutter: 16px;
+    --section-gap: 48px;
+  }
+}
