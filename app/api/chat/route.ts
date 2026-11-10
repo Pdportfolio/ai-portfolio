@@ -106,7 +106,7 @@ export async function POST(request: Request) {
       },
       providerOptions: {
         groq: {
-          reasoningEffort: "medium",
+          reasoningEffort: "low",
           reasoningFormat: "hidden",
         },
       },
