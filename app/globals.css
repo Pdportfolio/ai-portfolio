@@ -697,6 +697,7 @@ main {
 .chat-reply ul,
 .chat-reply ol {
   padding-left: 1.2rem;
+  list-style: disc;
 }
 
 .chat-reply li {
@@ -1260,4 +1261,17 @@ main {
   font-size: var(--text-xs);
   font-weight: 400;
   line-height: 1.4;
+}
+
+.site-footer {
+  position: fixed;
+  left: 0;
+  right: 0;
+  bottom: 0.4rem;
+  z-index: 250;
+  margin: 0;
+  color: var(--color-muted);
+  font-size: 0.7rem;
+  text-align: center;
+  pointer-events: none;
 }

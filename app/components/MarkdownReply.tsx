@@ -59,7 +59,20 @@ export function MarkdownReply({
     <div className="chat-reply">
       <div className="chat-reply__body">
         {blocks.length > 0 ? (
-          blocks.map((block, index) => <p key={index}>{inlineWithBold(block.replace(/\n/g, " "), takeBold)}</p>)
+          blocks.map((block, blockIndex) => {
+            const lines = block.split("\n").filter((line) => line.trim());
+            const isList = lines.length > 1 && lines.every((line) => /^[-*]\s+/.test(line.trim()));
+            if (isList) {
+              return (
+                <ul key={blockIndex}>
+                  {lines.map((line, lineIndex) => (
+                    <li key={lineIndex}>{inlineWithBold(line.trim().replace(/^[-*]\s+/, ""), takeBold)}</li>
+                  ))}
+                </ul>
+              );
+            }
+            return <p key={blockIndex}>{inlineWithBold(block.replace(/\n/g, " "), takeBold)}</p>;
+          })
         ) : (
           <ReactMarkdown>{markdown}</ReactMarkdown>
         )}

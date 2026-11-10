@@ -1,5 +1,6 @@
 import type { Metadata, Viewport } from "next";
 import { ChatProvider } from "./components/ChatContext";
+import { Footer } from "./components/Footer";
 import { SmoothScroll } from "./components/SmoothScroll";
 import "./globals.css";
 
@@ -25,6 +26,7 @@ export default function RootLayout({
         <ChatProvider>
           <SmoothScroll>{children}</SmoothScroll>
         </ChatProvider>
+        <Footer />
       </body>
     </html>
   );
