@@ -23,7 +23,10 @@ function shortUrl(url: string) {
 }
 
 function formatProject(project: PortfolioProject) {
-  const links = [project.github, project.demo].filter(Boolean).map(shortUrl).join(" ");
+  const links = [project.github, project.demo]
+    .filter((value): value is string => Boolean(value))
+    .map(shortUrl)
+    .join(" ");
   const language = project.language ? ` ${project.language}` : "";
   const pushed = project.pushedAt ? ` ${project.pushedAt.slice(0, 10)}` : "";
   const origin = project.source === "github" ? " gh" : " manual";
