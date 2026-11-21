@@ -1,5 +1,15 @@
 import type { ReactNode } from "react";
 import ReactMarkdown from "react-markdown";
+import { person } from "@/app/lib/content";
+import { DraftMessageCard } from "./DraftMessageCard";
+
+function parseDraftField(block: string, label: "Name" | "Email" | "Phone" | "Message") {
+  const match = block.match(new RegExp(`^${label}: ?(.*)$`, "m"));
+  const value = (match?.[1] ?? "").trim();
+  if (!value || /^<.+>$/.test(value) || /^\[.+\]$/.test(value)) return "";
+  if (label === "Email" && value.toLowerCase() === person.email.toLowerCase()) return "";
+  return value;
+}
 
 function displayText(text: string) {
   return ensureOneBold(
@@ -46,7 +56,9 @@ export function MarkdownReply({
   text: string;
   streaming?: boolean;
 }) {
-  const markdown = displayText(text);
+  const draftMatch = text.match(/```draft-message\n([\s\S]*?)\n```/);
+  const textWithoutDraft = draftMatch ? text.slice(0, draftMatch.index).trim() : text;
+  const markdown = displayText(textWithoutDraft);
   const blocks = markdown.split(/\n{2,}/).filter((block) => block.trim());
   let boldAvailable = true;
   const takeBold = () => {
@@ -56,7 +68,7 @@ export function MarkdownReply({
   };
 
   return (
-    <div className="chat-reply">
+    <div className={draftMatch ? "chat-reply chat-reply--draft" : "chat-reply"}>
       <div className="chat-reply__body">
         {blocks.length > 0 ? (
           blocks.map((block, blockIndex) => {
@@ -73,10 +85,18 @@ export function MarkdownReply({
             }
             return <p key={blockIndex}>{inlineWithBold(block.replace(/\n/g, " "), takeBold)}</p>;
           })
-        ) : (
+        ) : markdown ? (
           <ReactMarkdown>{markdown}</ReactMarkdown>
-        )}
+        ) : null}
       </div>
+      {draftMatch ? (
+        <DraftMessageCard
+          initialName={parseDraftField(draftMatch[1], "Name")}
+          initialEmail={parseDraftField(draftMatch[1], "Email")}
+          initialPhone={parseDraftField(draftMatch[1], "Phone")}
+          initialMessage={parseDraftField(draftMatch[1], "Message")}
+        />
+      ) : null}
       {streaming ? <span className="chat-caret" aria-hidden="true" /> : null}
     </div>
   );

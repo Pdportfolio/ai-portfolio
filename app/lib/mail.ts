@@ -17,14 +17,16 @@ function clean(value: string) {
 export async function sendVisitorMessage(input: {
   name: string;
   email: string;
+  phone?: string;
   message: string;
   ip: string;
 }): Promise<SendVisitorResult> {
   const name = clean(input.name);
   const email = clean(input.email);
+  const phone = clean(input.phone ?? "");
   const message = input.message.trim();
 
-  if (!name || !message || !EMAIL_PATTERN.test(email) || message.length > MESSAGE_MAX) {
+  if (!name || !phone || !message || !EMAIL_PATTERN.test(email) || message.length > MESSAGE_MAX) {
     return { ok: false, error: "invalid" };
   }
 
@@ -57,7 +59,7 @@ export async function sendVisitorMessage(input: {
       to,
       replyTo: `${name} <${email}>`,
       subject: `Portfolio message from ${name}`,
-      text: `Name: ${name}\nEmail: ${email}\n\n${message}`,
+      text: `Name: ${name}\nEmail: ${email}${phone ? `\nPhone: ${phone}` : ""}\n\n${message}`,
     });
 
     console.info(`Portfolio message relayed (${input.ip}).`);

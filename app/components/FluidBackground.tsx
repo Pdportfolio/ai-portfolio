@@ -2,20 +2,17 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useMotionEnabled } from "./AmbientField";
-
-const MIN_WIDTH = 768;
-const FPS_SAMPLE_MS = 2000;
-const MIN_FPS = 24;
+import { useTheme } from "./ThemeProvider";
 
 function canRunFluid() {
   if (typeof window === "undefined") return false;
-  if (window.innerWidth < MIN_WIDTH) return false;
   if (!window.matchMedia("(pointer: fine)").matches) return false;
   return true;
 }
 
 export function FluidBackground() {
   const motionEnabled = useMotionEnabled();
+  const { theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [enabled, setEnabled] = useState(false);
 
@@ -59,24 +56,55 @@ export function FluidBackground() {
       return id;
     };
 
+    const narrow = window.innerWidth < 900;
     const wide = window.innerWidth >= 1200;
+    let splat = { r: 0.7, g: 0.35, b: 0.85 };
     const options = {
       IMMEDIATE: false,
       AUTO: false,
       TRIGGER: "hover" as const,
-      SIM_RESOLUTION: 128,
+      SIM_RESOLUTION: narrow ? 96 : 128,
       DYE_RESOLUTION: wide ? 1024 : 512,
-      DENSITY_DISSIPATION: 0.5,
-      VELOCITY_DISSIPATION: 3,
+      DENSITY_DISSIPATION: 0.38,
+      VELOCITY_DISSIPATION: 2.2,
       PRESSURE: 0.1,
-      PRESSURE_ITERATIONS: wide ? 20 : 12,
-      CURL: 3,
+      PRESSURE_ITERATIONS: wide ? 18 : 10,
+      CURL: 2.5,
       SPLAT_RADIUS: 0.2,
-      SPLAT_FORCE: 6000,
+      SPLAT_FORCE: 5200,
       SHADING: true,
       COLORFUL: true,
       COLOR_UPDATE_SPEED: 10,
-      BACK_COLOR: { r: 255, g: 255, b: 255 },
+      SPLAT_COLOR: {
+        get r() {
+          const hue = Math.random();
+          const i = Math.floor(hue * 6);
+          const f = hue * 6 - i;
+          const q = 1 - f;
+          const rgb =
+            i === 0
+              ? [1, f, 0]
+              : i === 1
+                ? [q, 1, 0]
+                : i === 2
+                  ? [0, 1, f]
+                  : i === 3
+                    ? [0, q, 1]
+                    : i === 4
+                      ? [f, 0, 1]
+                      : [1, 0, q];
+          splat = { r: rgb[0] * 0.78, g: rgb[1] * 0.78, b: rgb[2] * 0.78 };
+          return splat.r;
+        },
+        get g() {
+          return splat.g;
+        },
+        get b() {
+          return splat.b;
+        },
+      },
+      BACK_COLOR:
+        theme === "dark" ? { r: 9, g: 9, b: 11 } : { r: 255, g: 255, b: 255 },
       TRANSPARENT: false,
       BLOOM: false,
       SUNRAYS: false,
@@ -86,8 +114,12 @@ export function FluidBackground() {
       if (cancelled || !canvasRef.current) return;
       mod.default(canvas, options);
 
-      const relayToCanvas = (type: "mousedown" | "mousemove", event: PointerEvent | MouseEvent) => {
-        const rect = canvas.getBoundingClientRect();
+      let primed = false;
+
+      const relayToCanvas = (type: "mousedown" | "mousemove" | "mouseup", event: PointerEvent | MouseEvent) => {
+        const target = canvasRef.current;
+        if (!target) return;
+        const rect = target.getBoundingClientRect();
         const offsetX = event.clientX - rect.left;
         const offsetY = event.clientY - rect.top;
         const synthetic = new MouseEvent(type, {
@@ -100,56 +132,46 @@ export function FluidBackground() {
           offsetX: { get: () => offsetX },
           offsetY: { get: () => offsetY },
         });
-        canvas.dispatchEvent(synthetic);
+        target.dispatchEvent(synthetic);
       };
 
-      let primed = false;
-      let relaying = false;
-      const relay = (event: PointerEvent) => {
-        if (relaying) return;
-        relaying = true;
-        try {
-          if (!primed) {
-            primed = true;
-            relayToCanvas("mousedown", event);
-          }
-          relayToCanvas("mousemove", event);
-        } finally {
-          relaying = false;
+      const releasePointer = () => {
+        if (!primed) return;
+        relayToCanvas("mouseup", new MouseEvent("mouseup"));
+        primed = false;
+      };
+
+      const onPointerDown = (event: PointerEvent) => {
+        if (event.pointerType !== "mouse") return;
+        primed = true;
+        relayToCanvas("mousedown", event);
+      };
+
+      const onPointerMove = (event: PointerEvent) => {
+        if (event.pointerType !== "mouse") return;
+        if (!primed) {
+          primed = true;
+          relayToCanvas("mousedown", event);
         }
+        relayToCanvas("mousemove", event);
       };
 
       const attachRelay = window.setTimeout(() => {
         if (cancelled) return;
-        window.addEventListener("pointermove", relay, { passive: true });
-        listeners.push(() => window.removeEventListener("pointermove", relay));
-      }, 550);
-
+        window.addEventListener("pointerdown", onPointerDown, { passive: true, capture: true });
+        window.addEventListener("pointermove", onPointerMove, { passive: true, capture: true });
+        window.addEventListener("pointerup", releasePointer, { passive: true, capture: true });
+        window.addEventListener("pointercancel", releasePointer, { passive: true, capture: true });
+        window.addEventListener("blur", releasePointer);
+        listeners.push(() => {
+          window.removeEventListener("pointerdown", onPointerDown, { capture: true });
+          window.removeEventListener("pointermove", onPointerMove, { capture: true });
+          window.removeEventListener("pointerup", releasePointer, { capture: true });
+          window.removeEventListener("pointercancel", releasePointer, { capture: true });
+          window.removeEventListener("blur", releasePointer);
+        });
+      }, 505);
       listeners.push(() => window.clearTimeout(attachRelay));
-
-      origRaf((startTime) => {
-        const wait = (time: number) => {
-          if (cancelled) return;
-          if (time - startTime < 1500) {
-            origRaf(wait);
-            return;
-          }
-          let frames = 0;
-          let sampleStart = time;
-          const watch = (now: number) => {
-            if (cancelled) return;
-            frames += 1;
-            if (now - sampleStart >= FPS_SAMPLE_MS) {
-              const fps = (frames * 1000) / (now - sampleStart);
-              if (fps < MIN_FPS) setEnabled(false);
-              return;
-            }
-            origRaf(watch);
-          };
-          origRaf(watch);
-        };
-        origRaf(wait);
-      });
     });
 
     return () => {
@@ -162,7 +184,7 @@ export function FluidBackground() {
       const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
       gl?.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [enabled]);
+  }, [enabled, theme]);
 
   if (!enabled) return null;
 

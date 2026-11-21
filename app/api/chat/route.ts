@@ -2,9 +2,7 @@ import { groq } from "@ai-sdk/groq";
 import { streamText, tool, stepCountIs } from "ai";
 import { z } from "zod";
 import { getRecentActivity } from "../../lib/github";
-import { sendVisitorMessage } from "../../lib/mail";
 import { buildSystemPrompt } from "../../lib/prompt";
-import { clientIp } from "../../lib/request-ip";
 
 export const maxDuration = 90;
 
@@ -54,8 +52,6 @@ export async function POST(request: Request) {
     return Response.json({ error: "Ask a question first." }, { status: 400 });
   }
 
-  const ip = clientIp(request);
-
   try {
     const result = streamText({
       model: groq(MODEL_ID),
@@ -68,14 +64,20 @@ export async function POST(request: Request) {
       tools: {
         sendMessage: tool({
           description:
-            "Email Prakhar a visitor message. Call only with explicit intent plus name, contact email, and body.",
+            "Draft a visitor message for Prakhar. Call after explicit intent. Name, email, phone, and body may be blank.",
           inputSchema: z.object({
             name: z.string(),
             email: z.string(),
+            phone: z.string(),
             message: z.string(),
           }),
-          execute: async ({ name, email, message }) =>
-            sendVisitorMessage({ name, email, message, ip }),
+          execute: async ({ name, email, phone, message }) => ({
+            status: "drafted" as const,
+            name,
+            email,
+            phone,
+            message,
+          }),
         }),
         getRecentActivity: tool({
           description:

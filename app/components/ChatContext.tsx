@@ -25,6 +25,7 @@ type ChatContextValue = {
   isActive: boolean;
   ask: (question: string) => void;
   retry: () => void;
+  reset: () => void;
 };
 
 const ChatContext = createContext<ChatContextValue | null>(null);
@@ -161,6 +162,17 @@ export function ChatProvider({ children }: { children: ReactNode }) {
     void send(last, false);
   }, [send]);
 
+  const reset = useCallback(() => {
+    abortRef.current?.abort();
+    abortRef.current = null;
+    pendingRef.current = false;
+    lastQuestionRef.current = null;
+    messagesRef.current = [];
+    setMessages([]);
+    setStatus("idle");
+    setError(null);
+  }, []);
+
   const value = useMemo(
     () => ({
       messages,
@@ -169,8 +181,9 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       isActive: messages.length > 0 || status !== "idle",
       ask,
       retry,
+      reset,
     }),
-    [messages, status, error, ask, retry],
+    [messages, status, error, ask, retry, reset],
   );
 
   return <ChatContext.Provider value={value}>{children}</ChatContext.Provider>;
