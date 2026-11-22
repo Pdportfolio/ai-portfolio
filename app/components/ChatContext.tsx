@@ -139,13 +139,15 @@ export function ChatProvider({ children }: { children: ReactNode }) {
       }
 
       if (assistantId) writeAssistant(assistantId, text);
+      if (abortRef.current !== abort) return;
       setStatus("idle");
     } catch (caught) {
       window.clearTimeout(timeout);
+      if (abortRef.current !== abort) return;
       setStatus("error");
       setError(messageFromError(caught));
     } finally {
-      pendingRef.current = false;
+      if (abortRef.current === abort) pendingRef.current = false;
     }
   }, []);
 

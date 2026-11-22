@@ -26,7 +26,7 @@ export async function sendVisitorMessage(input: {
   const phone = clean(input.phone ?? "");
   const message = input.message.trim();
 
-  if (!name || !phone || !message || !EMAIL_PATTERN.test(email) || message.length > MESSAGE_MAX) {
+  if (!name || !message || !EMAIL_PATTERN.test(email) || message.length > MESSAGE_MAX) {
     return { ok: false, error: "invalid" };
   }
 

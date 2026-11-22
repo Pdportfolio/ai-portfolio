@@ -10,11 +10,22 @@ body {
 }
 
 html {
-  scrollbar-color: #d4d4d4 #ffffff;
+  background: var(--color-bg);
+  scrollbar-color: #d4d4d4 var(--color-bg);
 }
 
-html[data-theme="dark"] {
-  scrollbar-color: #52525b #18181b;
+html::-webkit-scrollbar {
+  width: 10px;
+}
+
+html::-webkit-scrollbar-track {
+  background: var(--color-bg);
+}
+
+html::-webkit-scrollbar-thumb {
+  background: rgb(0 0 0 / 0.18);
+  border: 2px solid var(--color-bg);
+  border-radius: 999px;
 }
 
 .page-lock {

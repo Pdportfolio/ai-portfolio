@@ -3,9 +3,10 @@ import ReactMarkdown from "react-markdown";
 import { person } from "@/app/lib/content";
 import { DraftMessageCard } from "./DraftMessageCard";
 
-function parseDraftField(block: string, label: "Name" | "Email" | "Phone" | "Message") {
+function parseDraftField(block: string, label: "Name" | "Email" | "Phone" | "Message" | "Token") {
   const match = block.match(new RegExp(`^${label}: ?(.*)$`, "m"));
   const value = (match?.[1] ?? "").trim();
+  if (label === "Token") return value;
   if (!value || /^<.+>$/.test(value) || /^\[.+\]$/.test(value)) return "";
   if (label === "Email" && value.toLowerCase() === person.email.toLowerCase()) return "";
   return value;
@@ -49,6 +50,8 @@ function inlineWithBold(block: string, takeBold: () => boolean): ReactNode[] {
   return nodes;
 }
 
+const REVIEW_PHRASE = "Got it once review below";
+
 export function MarkdownReply({
   text,
   streaming,
@@ -57,6 +60,7 @@ export function MarkdownReply({
   streaming?: boolean;
 }) {
   const draftMatch = text.match(/```draft-message\n([\s\S]*?)\n```/);
+  const draftFallback = !draftMatch && text.includes(REVIEW_PHRASE);
   const textWithoutDraft = draftMatch ? text.slice(0, draftMatch.index).trim() : text;
   const markdown = displayText(textWithoutDraft);
   const blocks = markdown.split(/\n{2,}/).filter((block) => block.trim());
@@ -67,8 +71,26 @@ export function MarkdownReply({
     return true;
   };
 
+  const draftCard = draftMatch ? (
+    <DraftMessageCard
+      initialName={parseDraftField(draftMatch[1], "Name")}
+      initialEmail={parseDraftField(draftMatch[1], "Email")}
+      initialPhone={parseDraftField(draftMatch[1], "Phone")}
+      initialMessage={parseDraftField(draftMatch[1], "Message")}
+      initialToken={parseDraftField(draftMatch[1], "Token")}
+    />
+  ) : draftFallback && !streaming ? (
+    <DraftMessageCard
+      initialName=""
+      initialEmail=""
+      initialPhone=""
+      initialMessage=""
+      initialToken=""
+    />
+  ) : null;
+
   return (
-    <div className={draftMatch ? "chat-reply chat-reply--draft" : "chat-reply"}>
+    <div className={draftMatch || draftFallback ? "chat-reply chat-reply--draft" : "chat-reply"}>
       <div className="chat-reply__body">
         {blocks.length > 0 ? (
           blocks.map((block, blockIndex) => {
@@ -89,14 +111,7 @@ export function MarkdownReply({
           <ReactMarkdown>{markdown}</ReactMarkdown>
         ) : null}
       </div>
-      {draftMatch ? (
-        <DraftMessageCard
-          initialName={parseDraftField(draftMatch[1], "Name")}
-          initialEmail={parseDraftField(draftMatch[1], "Email")}
-          initialPhone={parseDraftField(draftMatch[1], "Phone")}
-          initialMessage={parseDraftField(draftMatch[1], "Message")}
-        />
-      ) : null}
+      {draftCard}
       {streaming ? <span className="chat-caret" aria-hidden="true" /> : null}
     </div>
   );

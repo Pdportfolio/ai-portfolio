@@ -1,6 +1,6 @@
 "use client";
 
-import { FormEvent, useEffect, useRef, useState } from "react";
+import { type CSSProperties, FormEvent, useEffect, useRef, useState } from "react";
 import { AnimatePresence, motion } from "framer-motion";
 import { useMotionEnabled } from "./AmbientField";
 import { Avatar } from "./Avatar";
@@ -21,6 +21,7 @@ const iconProps = {
 const PROMPTS = [
   {
     label: "Me",
+    accent: "#329696",
     question: "Tell me about yourself and your experience as an AI/ML Engineer.",
     icon: (
       <svg {...iconProps} stroke="#329696">
@@ -33,6 +34,7 @@ const PROMPTS = [
   },
   {
     label: "Projects",
+    accent: "#3E9858",
     question: "What projects have you built?",
     icon: (
       <svg {...iconProps} stroke="#3E9858">
@@ -45,6 +47,7 @@ const PROMPTS = [
   },
   {
     label: "Experience",
+    accent: "#E07856",
     question: "Tell me about your work experience.",
     icon: (
       <svg {...iconProps} stroke="#E07856">
@@ -55,6 +58,7 @@ const PROMPTS = [
   },
   {
     label: "Skills",
+    accent: "#856ED9",
     question: "What skills and tools do you work with?",
     icon: (
       <svg {...iconProps} stroke="#856ED9">
@@ -66,6 +70,7 @@ const PROMPTS = [
   },
   {
     label: "Education",
+    accent: "#4F86C6",
     question: "What is your educational background?",
     icon: (
       <svg {...iconProps} stroke="#4F86C6">
@@ -77,6 +82,7 @@ const PROMPTS = [
   },
   {
     label: "Certifications",
+    accent: "#B95F9D",
     question: "What certifications do you have?",
     icon: (
       <svg {...iconProps} stroke="#B95F9D">
@@ -87,6 +93,7 @@ const PROMPTS = [
   },
   {
     label: "Contact",
+    accent: "#C19433",
     question: "How can I get in touch with you?",
     icon: (
       <svg {...iconProps} stroke="#C19433">
@@ -328,6 +335,7 @@ export function Hero({
                       type="button"
                       className="ask-pill"
                       data-prompt={prompt.question}
+                      style={{ "--pill-accent": prompt.accent } as CSSProperties}
                       disabled={busy}
                       onClick={() => submitQuestion(prompt.question)}
                     >

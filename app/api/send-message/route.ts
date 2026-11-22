@@ -1,3 +1,4 @@
+import { verifyDraftToken } from "../../lib/draft-token";
 import { sendVisitorMessage } from "../../lib/mail";
 import { clientIp } from "../../lib/request-ip";
 
@@ -9,12 +10,15 @@ export async function POST(request: Request) {
     return Response.json({ ok: false, error: "invalid" }, { status: 400 });
   }
 
-  const { name, email, phone, message } = (body ?? {}) as Record<string, unknown>;
+  const { name, email, phone, message, token } = (body ?? {}) as Record<string, unknown>;
+  if (!verifyDraftToken(token)) {
+    return Response.json({ ok: false, error: "invalid" }, { status: 400 });
+  }
   if (
     typeof name !== "string" ||
     typeof email !== "string" ||
-    typeof phone !== "string" ||
-    typeof message !== "string"
+    typeof message !== "string" ||
+    (phone !== undefined && typeof phone !== "string")
   ) {
     return Response.json({ ok: false, error: "invalid" }, { status: 400 });
   }
@@ -22,7 +26,7 @@ export async function POST(request: Request) {
   const result = await sendVisitorMessage({
     name,
     email,
-    phone,
+    phone: typeof phone === "string" ? phone : "",
     message,
     ip: clientIp(request),
   });

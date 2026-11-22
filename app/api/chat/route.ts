@@ -1,6 +1,7 @@
 import { groq } from "@ai-sdk/groq";
 import { streamText, tool, stepCountIs } from "ai";
 import { z } from "zod";
+import { signDraftToken } from "../../lib/draft-token";
 import { getRecentActivity } from "../../lib/github";
 import { buildSystemPrompt } from "../../lib/prompt";
 
@@ -66,17 +67,18 @@ export async function POST(request: Request) {
           description:
             "Draft a visitor message for Prakhar. Call after explicit intent. Name, email, phone, and body may be blank.",
           inputSchema: z.object({
-            name: z.string(),
-            email: z.string(),
-            phone: z.string(),
-            message: z.string(),
+            name: z.string().optional(),
+            email: z.string().optional(),
+            phone: z.string().optional(),
+            message: z.string().optional(),
           }),
-          execute: async ({ name, email, phone, message }) => ({
+          execute: async ({ name = "", email = "", phone = "", message = "" }) => ({
             status: "drafted" as const,
             name,
             email,
             phone,
             message,
+            token: signDraftToken(),
           }),
         }),
         getRecentActivity: tool({

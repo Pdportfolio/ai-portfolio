@@ -160,6 +160,7 @@
   position: fixed;
   inset: 0;
   z-index: 0;
+  background: var(--color-bg);
   pointer-events: none;
 }
 
@@ -431,6 +432,14 @@ main {
   }
 }
 
+@media (max-width: 639px) {
+  .ask-pill:last-child:nth-child(odd) {
+    grid-column: 1 / -1;
+    width: calc((100% - 8px) / 2);
+    margin-inline: auto;
+  }
+}
+
 .ask-pills__toggle {
   margin-top: 0.5rem;
   border: 0;
@@ -443,6 +452,7 @@ main {
 }
 
 .ask-pill {
+  --pill-accent: #0171e3;
   display: flex;
   flex-direction: column;
   align-items: center;
@@ -464,7 +474,8 @@ main {
   transition:
     transform 140ms ease,
     background-color 200ms ease,
-    border-color 200ms ease;
+    border-color 200ms ease,
+    box-shadow 200ms ease;
 }
 
 .ask-pill span {
@@ -502,24 +513,19 @@ main {
 
 @media (hover: hover) and (pointer: fine) {
   .ask-pill:hover {
-    background: rgb(228 228 231 / 0.3);
+    border-color: color-mix(in oklab, var(--pill-accent) 42%, #e8e8ea);
+    background: color-mix(in oklab, var(--pill-accent) 16%, rgb(255 255 255 / 0.55));
+    box-shadow: 0 8px 20px -6px color-mix(in oklab, var(--pill-accent) 28%, transparent);
   }
 }
 
 .corner-links {
   position: fixed;
   top: 1rem;
+  right: 1rem;
   z-index: var(--z-nav);
   display: flex;
   gap: 0.45rem;
-}
-
-.corner-links--left {
-  left: 1rem;
-}
-
-.corner-links--right {
-  right: 1rem;
 }
 
 .hero--chat {
@@ -1379,74 +1385,4 @@ main {
   font-size: 0.7rem;
   text-align: center;
   pointer-events: none;
-}
-
-html[data-theme="dark"] .icon-btn {
-  border-color: var(--color-rule);
-  background: rgb(24 24 27 / 0.72);
-  color: var(--color-text);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  html[data-theme="dark"] .icon-btn:hover {
-    border-color: #52525b;
-  }
-}
-
-html[data-theme="dark"] .hero__hello,
-html[data-theme="dark"] .hero h1 {
-  color: var(--color-text);
-}
-
-html[data-theme="dark"] .hero__focus {
-  color: var(--color-muted);
-}
-
-html[data-theme="dark"] .ask-bar {
-  border-color: var(--color-rule);
-  background: rgb(24 24 27 / 0.62);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  html[data-theme="dark"] .ask-bar:hover {
-    border-color: #52525b;
-  }
-}
-
-html[data-theme="dark"] .ask-bar input {
-  color: var(--color-text);
-}
-
-html[data-theme="dark"] .ask-pill {
-  border-color: var(--color-rule);
-  background: rgb(24 24 27 / 0.55);
-  color: var(--color-muted);
-}
-
-@media (hover: hover) and (pointer: fine) {
-  html[data-theme="dark"] .ask-pill:hover {
-    background: rgb(39 39 42 / 0.65);
-  }
-}
-
-html[data-theme="dark"] .chat-bubble {
-  border-color: var(--color-rule);
-  background: var(--color-surface-2);
-  color: var(--color-text);
-}
-
-html[data-theme="dark"] .chat-reply {
-  border-color: var(--color-rule);
-  background: rgb(24 24 27 / 0.82);
-  color: var(--color-text);
-}
-
-html[data-theme="dark"] .chat-reply code,
-html[data-theme="dark"] .chat-reply pre {
-  background: var(--color-surface-2);
-}
-
-html[data-theme="dark"] .chat-thread::-webkit-scrollbar-thumb:hover,
-html[data-theme="dark"] .chat-thread:hover::-webkit-scrollbar-thumb {
-  background-color: #ffffff40;
 }

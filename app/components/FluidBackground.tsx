@@ -2,17 +2,16 @@
 
 import { useEffect, useRef, useState } from "react";
 import { useMotionEnabled } from "./AmbientField";
-import { useTheme } from "./ThemeProvider";
 
 function canRunFluid() {
   if (typeof window === "undefined") return false;
-  if (!window.matchMedia("(pointer: fine)").matches) return false;
-  return true;
+  const probe = document.createElement("canvas");
+  const gl = probe.getContext("webgl2") ?? probe.getContext("webgl");
+  return Boolean(gl);
 }
 
 export function FluidBackground() {
   const motionEnabled = useMotionEnabled();
-  const { theme } = useTheme();
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const [enabled, setEnabled] = useState(false);
 
@@ -56,6 +55,7 @@ export function FluidBackground() {
       return id;
     };
 
+    const mobile = window.innerWidth < 480;
     const narrow = window.innerWidth < 900;
     const wide = window.innerWidth >= 1200;
     let splat = { r: 0.7, g: 0.35, b: 0.85 };
@@ -63,15 +63,15 @@ export function FluidBackground() {
       IMMEDIATE: false,
       AUTO: false,
       TRIGGER: "hover" as const,
-      SIM_RESOLUTION: narrow ? 96 : 128,
-      DYE_RESOLUTION: wide ? 1024 : 512,
+      SIM_RESOLUTION: mobile ? 64 : narrow ? 96 : 128,
+      DYE_RESOLUTION: mobile ? 256 : wide ? 1024 : 512,
       DENSITY_DISSIPATION: 0.38,
       VELOCITY_DISSIPATION: 2.2,
       PRESSURE: 0.1,
       PRESSURE_ITERATIONS: wide ? 18 : 10,
       CURL: 2.5,
-      SPLAT_RADIUS: 0.2,
-      SPLAT_FORCE: 5200,
+      SPLAT_RADIUS: mobile ? 0.24 : 0.2,
+      SPLAT_FORCE: mobile ? 4600 : 5200,
       SHADING: true,
       COLORFUL: true,
       COLOR_UPDATE_SPEED: 10,
@@ -103,8 +103,7 @@ export function FluidBackground() {
           return splat.b;
         },
       },
-      BACK_COLOR:
-        theme === "dark" ? { r: 9, g: 9, b: 11 } : { r: 255, g: 255, b: 255 },
+      BACK_COLOR: { r: 255, g: 255, b: 255 },
       TRANSPARENT: false,
       BLOOM: false,
       SUNRAYS: false,
@@ -115,6 +114,7 @@ export function FluidBackground() {
       mod.default(canvas, options);
 
       let primed = false;
+      let activePointer: PointerEvent | null = null;
 
       const relayToCanvas = (type: "mousedown" | "mousemove" | "mouseup", event: PointerEvent | MouseEvent) => {
         const target = canvasRef.current;
@@ -135,20 +135,24 @@ export function FluidBackground() {
         target.dispatchEvent(synthetic);
       };
 
-      const releasePointer = () => {
+      const releasePointer = (event?: PointerEvent) => {
         if (!primed) return;
-        relayToCanvas("mouseup", new MouseEvent("mouseup"));
+        relayToCanvas("mouseup", event ?? activePointer ?? new MouseEvent("mouseup"));
         primed = false;
+        activePointer = null;
       };
 
       const onPointerDown = (event: PointerEvent) => {
-        if (event.pointerType !== "mouse") return;
+        activePointer = event;
         primed = true;
         relayToCanvas("mousedown", event);
       };
 
       const onPointerMove = (event: PointerEvent) => {
-        if (event.pointerType !== "mouse") return;
+        if (event.pointerType === "touch" || event.pointerType === "pen") {
+          if (event.buttons === 0 && !primed) return;
+        }
+        activePointer = event;
         if (!primed) {
           primed = true;
           relayToCanvas("mousedown", event);
@@ -160,16 +164,40 @@ export function FluidBackground() {
         if (cancelled) return;
         window.addEventListener("pointerdown", onPointerDown, { passive: true, capture: true });
         window.addEventListener("pointermove", onPointerMove, { passive: true, capture: true });
-        window.addEventListener("pointerup", releasePointer, { passive: true, capture: true });
-        window.addEventListener("pointercancel", releasePointer, { passive: true, capture: true });
-        window.addEventListener("blur", releasePointer);
+        const onPointerUp = (event: PointerEvent) => releasePointer(event);
+        const onBlur = () => releasePointer();
+        window.addEventListener("pointerup", onPointerUp, { passive: true, capture: true });
+        window.addEventListener("pointercancel", onPointerUp, { passive: true, capture: true });
+        window.addEventListener("blur", onBlur);
         listeners.push(() => {
           window.removeEventListener("pointerdown", onPointerDown, { capture: true });
           window.removeEventListener("pointermove", onPointerMove, { capture: true });
-          window.removeEventListener("pointerup", releasePointer, { capture: true });
-          window.removeEventListener("pointercancel", releasePointer, { capture: true });
-          window.removeEventListener("blur", releasePointer);
+          window.removeEventListener("pointerup", onPointerUp, { capture: true });
+          window.removeEventListener("pointercancel", onPointerUp, { capture: true });
+          window.removeEventListener("blur", onBlur);
         });
+
+        const fpsWarmup = window.setTimeout(() => {
+          if (cancelled) return;
+          let frames = 0;
+          const start = performance.now();
+          const sampleMs = 2000;
+
+          const sample = () => {
+            if (cancelled) return;
+            frames += 1;
+            const elapsed = performance.now() - start;
+            if (elapsed < sampleMs) {
+              origRaf(sample);
+              return;
+            }
+            const fps = (frames / elapsed) * 1000;
+            const minFps = window.innerWidth < 480 ? 20 : 24;
+            if (fps < minFps) setEnabled(false);
+          };
+          origRaf(sample);
+        }, 1500);
+        listeners.push(() => window.clearTimeout(fpsWarmup));
       }, 505);
       listeners.push(() => window.clearTimeout(attachRelay));
     });
@@ -184,7 +212,7 @@ export function FluidBackground() {
       const gl = canvas.getContext("webgl2") ?? canvas.getContext("webgl");
       gl?.getExtension("WEBGL_lose_context")?.loseContext();
     };
-  }, [enabled, theme]);
+  }, [enabled]);
 
   if (!enabled) return null;
 
